@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TokenTracer Proxy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans" x-data="app()" x-init="initApp()" x-cloak>
+
+    <!-- Navigation -->
+    <nav class="bg-slate-800 border-b border-slate-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <a href="/">
+                            <img src="/logo.png" alt="TokenTracer Logo" class="h-8 w-auto">
+                        </a>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-4 flex items-center md:ml-6" x-show="token">
+                        <span class="text-sm text-slate-400 mr-2" x-text="userEmail"></span>
+                        <a href="/docs"
+                            class="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium mr-4">Docs</a>
+                        <button @click="logout()"
+                            class="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+
+        <!-- Login View -->
+        <div x-show="view === 'login'" class="flex justify-center items-center h-[80vh]">
+            <div class="bg-slate-800 p-8 rounded-lg shadow-lg w-full max-w-md border border-slate-700">
+                <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
+                <div x-show="error"
+                    class="bg-red-900/50 border border-red-500 text-red-200 px-4 py-2 rounded mb-4 text-sm"
+                    x-text="error"></div>
+                <form @submit.prevent="login">
+                    <div class="mb-4">
+                        <label class="block text-slate-400 text-sm font-bold mb-2">Email</label>
+                        <input x-model="authForm.email" type="email"
+                            class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                            required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-slate-400 text-sm font-bold mb-2">Password</label>
+                        <input x-model="authForm.password" type="password"
+                            class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                            required>
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition">
+                        Sign In
+                    </button>
+                </form>
+                <div class="mt-4 text-center">
+                    <a href="#" @click.prevent="view = 'signup'; error = ''"
+                        class="text-indigo-400 hover:text-indigo-300 text-sm">Need an account? Sign up</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signup View -->
+        <div x-show="view === 'signup'" class="flex justify-center items-center h-[80vh]">
+            <div class="bg-slate-800 p-8 rounded-lg shadow-lg w-full max-w-md border border-slate-700">
+                <h2 class="text-2xl font-bold mb-6 text-center">Sign Up</h2>
+                <div x-show="error"
+                    class="bg-red-900/50 border border-red-500 text-red-200 px-4 py-2 rounded mb-4 text-sm"
+                    x-text="error"></div>
+                <form @submit.prevent="signup">
+                    <div class="mb-4">
+                        <label class="block text-slate-400 text-sm font-bold mb-2">Email</label>
+                        <input x-model="authForm.email" type="email"
+                            class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                            required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-slate-400 text-sm font-bold mb-2">Password</label>
+                        <input x-model="authForm.password" type="password"
+                            class="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                            required>
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition">
+                        Create Account
+                    </button>
+                </form>
+                <div class="mt-4 text-center">
+                    <a href="#" @click.prevent="view = 'login'; error = ''"
+                        class="text-indigo-400 hover:text-indigo-300 text-sm">Already have an account? Login</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard View -->
+        <div x-show="view === 'dashboard'">
+            <!-- Tabs -->
+            <div class="flex border-b border-slate-700 mb-6">
+                <button @click="activeTab = 'usage'"
+                    :class="{'border-indigo-500 text-indigo-400': activeTab === 'usage', 'border-transparent text-slate-400 hover:text-slate-200': activeTab !== 'usage'}"
+                    class="px-4 py-2 border-b-2 font-medium">Usage</button>
+                <button @click="activeTab = 'aliases'"
+                    :class="{'border-indigo-500 text-indigo-400': activeTab === 'aliases', 'border-transparent text-slate-400 hover:text-slate-200': activeTab !== 'aliases'}"
+                    class="px-4 py-2 border-b-2 font-medium">Aliases</button>
+                <button @click="activeTab = 'keys'"
+                    :class="{'border-indigo-500 text-indigo-400': activeTab === 'keys', 'border-transparent text-slate-400 hover:text-slate-200': activeTab !== 'keys'}"
+                    class="px-4 py-2 border-b-2 font-medium">Provider Keys</button>
+                <button @click="activeTab = 'apikeys'"
+                    :class="{'border-indigo-500 text-indigo-400': activeTab === 'apikeys', 'border-transparent text-slate-400 hover:text-slate-200': activeTab !== 'apikeys'}"
+                    class="px-4 py-2 border-b-2 font-medium">My API Keys</button>
+            </div>
+
+            <!-- Usage Tab -->
+            <div x-show="activeTab === 'usage'">
+                <h3 class="text-lg font-medium leading-6 text-white mb-4">Request Log Aggregates</h3>
+                <div class="bg-slate-800 shadow overflow-hidden sm:rounded-md border border-slate-700">
+                    <table class="min-w-full divide-y divide-slate-700">
+                        <thead class="bg-slate-700">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                                    Provider</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                                    Alias</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                                    Requests</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                                    Input Tokens</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                                    Output Tokens</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-slate-800 divide-y divide-slate-700">
+                            <template x-for="stat in usageStats" :key="stat.alias + stat.provider">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300"
+                                        x-text="stat.provider"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-indigo-400" x-text="stat.alias">
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300 font-mono"
+                                        x-text="stat.requests"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300 font-mono"
+                                        x-text="stat.input_tokens"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300 font-mono"
+                                        x-text="stat.output_tokens"></td>
+                                </tr>
+                            </template>
+                            <tr x-show="usageStats.length === 0">
+                                <td colspan="5" class="px-6 py-4 text-center text-slate-500">No usage data found.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Aliases Tab -->
+            <div x-show="activeTab === 'aliases'">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium leading-6 text-white">Model Aliases</h3>
+                    <button @click="showAliasForm = true"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-3 rounded">New
+                        Alias</button>
+                </div>
+
+                <!-- Add/Edit Alias Form -->
+                <div x-show="showAliasForm" class="bg-slate-700 p-4 rounded mb-4 border border-slate-600">
+                    <form @submit.prevent="saveAlias">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold mb-1">Alias Name</label>
+                                <input x-model="aliasForm.alias" placeholder="e.g., gpt-4-prod" :disabled="editingAlias"
+                                    required
+                                    class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm disabled:opacity-50">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold mb-1">Primary Provider Key</label>
+                                <select x-model.number="aliasForm.provider_key_id"
+                                    @change="fetchProviderModels(aliasForm.provider_key_id)" required
+                                    class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm">
+                                    <option value="">Select Key</option>
+                                    <template x-for="key in providerKeys" :key="key.id">
+                                        <option :value="key.id" x-text="key.label + ' (' + key.provider + ')'"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold mb-1">Target Model</label>
+                                <input x-model="aliasForm.target_model" list="provider-models"
+                                    placeholder="Search or type model ID" required
+                                    class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200">
+                                <datalist id="provider-models">
+                                    <template x-for="model in availableModels" :key="model">
+                                        <option :value="model"></option>
+                                    </template>
+                                </datalist>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Options -->
+                        <div x-data="{ open: false }" class="mt-4 border-t border-slate-600 pt-3">
+                            <button type="button" @click="open = !open"
+                                class="flex items-center text-xs font-bold text-slate-400 hover:text-white mb-2">
+                                <svg class="w-4 h-4 mr-1 transition-transform" :class="open ? 'rotate-90' : ''"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5l7 7-7 7"></path>
+                                </svg>
+                                Advanced Options
+                            </button>
+
+                            <div x-show="open" x-transition class="space-y-4 pb-2">
+                                <!-- Fallback Alias -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold mb-1">Fallback Alias (Failover)</label>
+                                        <select x-model.number="aliasForm.fallback_alias_id"
+                                            class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200">
+                                            <option value="">No Fallback</option>
+                                            <template x-for="a in aliases" :key="a.alias">
+                                                <option :value="a.id" x-text="a.alias"
+                                                    x-show="a.alias !== aliasForm.alias">
+                                                </option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Smart Cost Optimization -->
+                                <div class="border-t border-slate-600 pt-3">
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <input type="checkbox" x-model="aliasForm.use_light_model" id="use_light_model"
+                                            class="rounded bg-slate-900 border-slate-600 text-indigo-600 focus:ring-indigo-500">
+                                        <label for="use_light_model" class="text-xs font-medium text-slate-300">Smart
+                                            Cost
+                                            Optimization (Use light model for short prompts)</label>
+                                    </div>
+
+                                    <div x-show="aliasForm.use_light_model"
+                                        class="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6 pl-4 border-l-2 border-slate-600">
+                                        <div>
+                                            <label
+                                                class="block text-[10px] font-bold mb-1 uppercase tracking-tight text-slate-400">Light
+                                                Model ID</label>
+                                            <input x-model="aliasForm.light_model" list="provider-models"
+                                                placeholder="e.g. gpt-4o-mini"
+                                                class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200">
+                                        </div>
+                                        <div>
+                                            <label
+                                                class="block text-[10px] font-bold mb-1 uppercase tracking-tight text-slate-400">Token
+                                                Threshold (10-512)</label>
+                                            <div class="flex items-center gap-2">
+                                                <input type="range" x-model.number="aliasForm.light_model_threshold"
+                                                    min="10" max="512" class="flex-grow accent-indigo-500">
+                                                <span
+                                                    class="text-xs font-mono bg-slate-900 px-2 py-1 rounded w-12 text-center text-indigo-400"
+                                                    x-text="aliasForm.light_model_threshold"></span>
+                                            </div>
+                                            <p class="text-[10px] text-slate-500 mt-1">If estimated input is under <span
+                                                    x-text="aliasForm.light_model_threshold"></span> tokens, route to
+                                                Light
+                                                Model.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex justify-end gap-2 border-t border-slate-600 pt-4">
+                            <button type="button" @click="cancelAliasForm"
+                                class="text-slate-400 hover:text-white text-sm">Cancel</button>
+                            <button type="submit"
+                                class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded font-medium shadow-sm transition-all"
+                                x-text="editingAlias ? 'Update Alias' : 'Create Alias'"></button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <template x-for="alias in aliases" :key="alias.alias">
+                        <div class="bg-slate-800 overflow-hidden shadow rounded-lg border border-slate-700 p-4">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <dt class="text-xs font-bold text-indigo-400 uppercase tracking-wider"
+                                        x-text="alias.alias"></dt>
+                                    <dd class="mt-1 text-xl font-semibold text-slate-100" x-text="alias.target_model">
+                                    </dd>
+                                    <template x-if="alias.use_light_model">
+                                        <div class="mt-2 flex items-center gap-2">
+                                            <span
+                                                class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-900/40 text-green-400 border border-green-800/50">
+                                                Smart Cost: <span x-text="alias.light_model"></span> (<span
+                                                    x-text="alias.light_model_threshold"></span> tokens)
+                                            </span>
+                                        </div>
+                                    </template>
+                                </div>
+                                <button @click="editAlias(alias)" class="text-slate-500 hover:text-indigo-400">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                        </path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="mt-4 space-y-1 text-xs text-slate-400">
+                                <p>Key ID: <span class="text-slate-300" x-text="alias.provider_key_id"></span></p>
+                                <template x-if="alias.fallback_alias_id">
+                                    <p>Fallback: <span class="text-amber-400"
+                                            x-text="getAliasNameById(alias.fallback_alias_id)"></span></p>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                    <div x-show="aliases.length === 0" class="col-span-full text-center text-slate-500 py-4">No aliases
+                        configured.</div>
+                </div>
+            </div>
+
+            <!-- Provider Keys Tab -->
+            <div x-show="activeTab === 'keys'">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium leading-6 text-white">Provider Configuration</h3>
+                    <button @click="showKeyForm = true"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-3 rounded">Add
+                        Provider Key</button>
+                </div>
+
+                <!-- Add Key Form -->
+                <div x-show="showKeyForm" class="bg-slate-700 p-4 rounded mb-4 border border-slate-600">
+                    <form @submit.prevent="saveKey">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold mb-1">Provider</label>
+                                <select x-model="keyForm.provider"
+                                    class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm">
+                                    <option value="openai">OpenAI</option>
+                                    <option value="anthropic">Anthropic</option>
+                                    <option value="gemini">Gemini</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold mb-1">Label</label>
+                                <input x-model="keyForm.label" placeholder="e.g., My Personal OpenAI"
+                                    class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold mb-1">API Key</label>
+                                <input x-model="keyForm.api_key" type="password" placeholder="sk-..."
+                                    class="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm">
+                            </div>
+                        </div>
+                        <div class="mt-3 flex justify-end gap-2">
+                            <button type="button" @click="showKeyForm = false"
+                                class="text-slate-400 hover:text-white text-sm">Cancel</button>
+                            <button type="submit"
+                                class="bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-1 rounded">Save</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-slate-800 shadow overflow-hidden sm:rounded-md border border-slate-700">
+                    <ul class="divide-y divide-slate-700">
+                        <template x-for="key in providerKeys" :key="key.id">
+                            <li class="px-4 py-4 sm:px-6">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-sm font-medium text-indigo-400 truncate" x-text="key.label"></p>
+                                    <div class="ml-2 flex-shrink-0 flex">
+                                        <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-900 text-green-100"
+                                            x-text="key.provider"></p>
+                                    </div>
+                                </div>
+                                <div class="mt-2 sm:flex sm:justify-between">
+                                    <div class="sm:flex">
+                                        <p class="flex items-center text-sm text-slate-400">
+                                            ID: <span x-text="key.id"></span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </li>
+                        </template>
+                        <li x-show="providerKeys.length === 0" class="px-4 py-4 text-center text-slate-500">No provider
+                            keys found.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- My API Keys Tab -->
+            <div x-show="activeTab === 'apikeys'">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium leading-6 text-white">My Proxy API Keys</h3>
+                    <button @click="generateApiKey"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-3 rounded">Generate
+                        New Key</button>
+                </div>
+
+                <div x-show="newApiKey" class="bg-green-900/50 border border-green-500 p-4 rounded mb-4">
+                    <p class="text-sm text-green-100 mb-2">Here is your new API Key. Copy it now, you won't see it
+                        again!</p>
+                    <code class="block bg-black p-2 rounded text-green-400 break-all" x-text="newApiKey"></code>
+                </div>
+
+                <!-- Note: The backend doesn't currently support listing API keys, only generating. 
+                     We typically would list active keys here. For now, we just support generation. -->
+                <p class="text-slate-400 text-sm">Click generate to create a generic long-lived key for your
+                    applications.</p>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        function app() {
+            return {
+                view: 'loading', // loading, login, signup, dashboard
+                token: localStorage.getItem('token') || '',
+                userEmail: '',
+                error: '',
+                activeTab: 'usage',
+
+                // Data
+                usageStats: [],
+                aliases: [],
+                providerKeys: [],
+                newApiKey: '',
+
+                // Forms
+                authForm: { email: '', password: '' },
+                aliasForm: { alias: '', target_model: '', provider_key_id: '', fallback_alias_id: '', use_light_model: false, light_model_threshold: 100, light_model: '' },
+                keyForm: { provider: 'openai', label: '', api_key: '' },
+                showAliasForm: false,
+                editingAlias: false,
+                showKeyForm: false,
+                availableModels: [],
+                staticModels: {
+                    openai: ['gpt-5', 'gpt-5.2-thinking', 'gpt-5.2-pro', 'gpt-4o', 'gpt-4o-mini', 'o3-pro', 'o4-mini'],
+                    anthropic: ['claude-4.5-opus', 'claude-4.5-sonnet', 'claude-4.5-haiku', 'claude-4-sonnet', 'claude-4-opus'],
+                    gemini: ['gemini-3-pro', 'gemini-3-flash', 'gemini-2.5-pro', 'gemini-2.5-flash']
+                },
+
+                async initApp() {
+                    if (this.token) {
+                        this.view = 'dashboard';
+                        this.userEmail = 'Authenticated User'; // Simplification
+                        await this.loadDashboardData();
+                    } else {
+                        this.view = 'login';
+                    }
+                },
+
+                async apiCall(url, method = 'GET', body = null) {
+                    const headers = { 'Content-Type': 'application/json' };
+                    if (this.token) {
+                        headers['Authorization'] = 'Bearer ' + this.token;
+                    }
+
+                    try {
+                        const res = await fetch(url, {
+                            method,
+                            headers,
+                            body: body ? JSON.stringify(body) : null
+                        });
+
+                        if (res.status === 401) {
+                            this.logout();
+                            return null;
+                        }
+
+                        if (!res.ok) {
+                            const txt = await res.text();
+                            throw new Error(txt || res.statusText);
+                        }
+
+                        // Try parsing JSON, else return text
+                        const contentType = res.headers.get("content-type");
+                        if (contentType && contentType.indexOf("application/json") !== -1) {
+                            return await res.json();
+                        }
+                        return null;
+                    } catch (e) {
+                        console.error("API Error", e);
+                        this.error = e.message;
+                        throw e;
+                    }
+                },
+
+                async login() {
+                    this.error = '';
+                    try {
+                        const data = await this.apiCall('/auth/login', 'POST', this.authForm);
+                        if (data && data.token) {
+                            this.token = data.token;
+                            localStorage.setItem('token', this.token);
+                            this.view = 'dashboard';
+                            this.authForm.password = ''; // Clear pw
+                            await this.loadDashboardData();
+                        }
+                    } catch (e) {
+                        console.log(e);
+                    }
+                },
+
+                async signup() {
+                    this.error = '';
+                    try {
+                        await this.apiCall('/auth/signup', 'POST', this.authForm);
+                        // Auto login after signup? Or ask to login.
+                        // Let's ask to login
+                        this.view = 'login';
+                        this.error = 'Account created! Please log in.'; // Reusing error for success msg temporarily logic
+                        this.authForm.password = '';
+                    } catch (e) {
+                        console.log(e);
+                    }
+                },
+
+                logout() {
+                    this.token = '';
+                    localStorage.removeItem('token');
+                    this.view = 'login';
+                    this.usageStats = [];
+                    this.aliases = [];
+                    this.providerKeys = [];
+                },
+
+                async loadDashboardData() {
+                    if (!this.token) return;
+
+                    // Fetch user info
+                    const userInfo = await this.apiCall('/auth/me');
+                    if (userInfo) {
+                        this.userEmail = userInfo.email;
+                    }
+
+                    // Parallel fetch
+                    const [stats, aliases, keys] = await Promise.all([
+                        this.apiCall('/manage/usage').catch(() => []),
+                        this.apiCall('/manage/aliases').catch(() => []),
+                        this.apiCall('/manage/providers').catch(() => [])
+                    ]);
+
+                    this.usageStats = stats || [];
+                    this.aliases = aliases || [];
+                    this.providerKeys = keys || [];
+                },
+
+                async saveAlias() {
+                    try {
+                        const method = this.editingAlias ? 'PATCH' : 'POST';
+                        const url = this.editingAlias ? `/manage/aliases/${this.aliasForm.alias}` : '/manage/aliases';
+
+                        await this.apiCall(url, method, this.aliasForm);
+                        this.showAliasForm = false;
+                        this.editingAlias = false;
+                        this.aliasForm = { alias: '', target_model: '', provider_key_id: '', fallback_alias_id: '', use_light_model: false, light_model_threshold: 100, light_model: '' };
+                        this.aliases = await this.apiCall('/manage/aliases'); // Refresh
+                    } catch (e) {
+                        console.log(e);
+                    }
+                },
+
+                editAlias(alias) {
+                    this.editingAlias = true;
+                    this.aliasForm = { ...alias };
+                    this.showAliasForm = true;
+                    if (alias.provider_key_id) {
+                        this.fetchProviderModels(alias.provider_key_id);
+                    }
+                },
+
+                cancelAliasForm() {
+                    this.showAliasForm = false;
+                    this.editingAlias = false;
+                    this.aliasForm = { alias: '', target_model: '', provider_key_id: '', fallback_alias_id: '', use_light_model: false, light_model_threshold: 100, light_model: '' };
+                },
+
+                async fetchProviderModels(keyID) {
+                    if (!keyID) {
+                        this.availableModels = [];
+                        return;
+                    }
+                    try {
+                        this.availableModels = await this.apiCall(`/manage/providers/${keyID}/models`) || [];
+                    } catch (e) {
+                        this.availableModels = [];
+                    }
+                },
+
+                getAliasNameById(id) {
+                    const a = this.aliases.find(x => x.id === id);
+                    return a ? a.alias : 'Unknown';
+                },
+
+                async saveKey() {
+                    try {
+                        await this.apiCall('/manage/providers', 'POST', this.keyForm);
+                        this.showKeyForm = false;
+                        this.keyForm = { provider: 'openai', label: '', api_key: '' };
+                        this.providerKeys = await this.apiCall('/manage/providers'); // Refresh
+                    } catch (e) {
+                        console.log(e);
+                    }
+                },
+
+                async generateApiKey() {
+                    try {
+                        const res = await this.apiCall('/auth/key', 'POST');
+                        if (res && res.token) {
+                            this.newApiKey = res.token;
+                        }
+                    } catch (e) {
+                        console.log(e);
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

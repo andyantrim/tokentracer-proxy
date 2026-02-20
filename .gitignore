@@ -1,0 +1,33 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+tokentracer-proxy
+bin/
+
+# Test binary
+*.test
+
+# Go build cache
+*.out
+
+# Environment and secrets
+.env
+.env.*
+*.key
+*.pem
+*.pfx
+*.p12
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
