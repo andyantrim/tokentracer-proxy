@@ -1,5 +1,7 @@
 # TokenTracer Proxy
 
+> **Note:** This project is untested and currently in development. Use at your own risk.
+
 A unified proxy for LLM APIs that provides token tracking, cost optimization, and intelligent routing across OpenAI, Anthropic, and Google Gemini.
 
 ## Features
