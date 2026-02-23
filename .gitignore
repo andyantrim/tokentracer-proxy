@@ -1,6 +1,7 @@
 # Binaries
 *.exe
 *.exe~
+*.pyc
 *.dll
 *.so
 *.dylib
@@ -27,6 +28,7 @@ bin/
 *.swp
 *.swo
 *~
+.venv/
 
 # OS
 .DS_Store

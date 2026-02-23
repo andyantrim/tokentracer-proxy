@@ -13,15 +13,14 @@ import (
 )
 
 type ModelAliasRequest struct {
-	ID                    int     `json:"id"`
-	Alias                 string  `json:"alias"`
-	TargetModel           string  `json:"target_model"`
-	ProviderKeyID         int     `json:"provider_key_id"`
-	FallbackProviderKeyID *int    `json:"fallback_provider_key_id"`
-	FallbackAliasID       *int    `json:"fallback_alias_id"`
-	UseLightModel         bool    `json:"use_light_model"`
-	LightModelThreshold   int     `json:"light_model_threshold"`
-	LightModel            *string `json:"light_model"`
+	ID                  int     `json:"id"`
+	Alias               string  `json:"alias"`
+	TargetModel         string  `json:"target_model"`
+	ProviderKeyID       int     `json:"provider_key_id"`
+	FallbackAliasID     *int    `json:"fallback_alias_id"`
+	UseLightModel       bool    `json:"use_light_model"`
+	LightModelThreshold int     `json:"light_model_threshold"`
+	LightModel          *string `json:"light_model"`
 }
 
 // UpsertModelAlias creates or updates a routing rule
@@ -47,7 +46,15 @@ func UpsertModelAlias(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := db.Repo.UpsertModelAlias(context.Background(), userID, req.Alias, req.TargetModel, req.ProviderKeyID, req.FallbackProviderKeyID, req.FallbackAliasID, req.UseLightModel, req.LightModelThreshold, req.LightModel)
+	// Normalize optional fields: treat zero as null
+	if req.FallbackAliasID != nil && *req.FallbackAliasID <= 0 {
+		req.FallbackAliasID = nil
+	}
+	if req.LightModel != nil && *req.LightModel == "" {
+		req.LightModel = nil
+	}
+
+	err := db.Repo.UpsertModelAlias(context.Background(), userID, req.Alias, req.TargetModel, req.ProviderKeyID, req.FallbackAliasID, req.UseLightModel, req.LightModelThreshold, req.LightModel)
 	if err != nil {
 		log.Printf("upsert model alias error: %v", err)
 		http.Error(w, "Failed to save model alias", http.StatusInternalServerError)
@@ -90,15 +97,14 @@ func ListAliases(w http.ResponseWriter, r *http.Request) {
 	var aliases []ModelAliasRequest
 	for _, a := range results {
 		aliases = append(aliases, ModelAliasRequest{
-			ID:                    a.ID,
-			Alias:                 a.Alias,
-			TargetModel:           a.TargetModel,
-			ProviderKeyID:         a.ProviderKeyID,
-			FallbackProviderKeyID: a.FallbackProviderKeyID,
-			FallbackAliasID:       a.FallbackAliasID,
-			UseLightModel:         a.UseLightModel,
-			LightModelThreshold:   a.LightModelThreshold,
-			LightModel:            a.LightModel,
+			ID:                  a.ID,
+			Alias:               a.Alias,
+			TargetModel:         a.TargetModel,
+			ProviderKeyID:       a.ProviderKeyID,
+			FallbackAliasID:     a.FallbackAliasID,
+			UseLightModel:       a.UseLightModel,
+			LightModelThreshold: a.LightModelThreshold,
+			LightModel:          a.LightModel,
 		})
 	}
 	w.Header().Set("Content-Type", "application/json")

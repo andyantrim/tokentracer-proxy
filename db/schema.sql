@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS model_aliases (
     alias VARCHAR(255) NOT NULL, -- e.g. 'prod-gpt4'
     target_model VARCHAR(255) NOT NULL, -- e.g. 'gpt-4' (upstream model id)
     provider_key_id INTEGER REFERENCES provider_keys(id), -- Primary provider
-    fallback_alias_id INTEGER REFERENCES model_aliases(id), -- New fallback to another alias
+    fallback_alias_id INTEGER NULL REFERENCES model_aliases(id), -- New fallback to another alias
     use_light_model BOOLEAN DEFAULT FALSE,
     light_model_threshold INTEGER DEFAULT 100, -- Number of tokens that when we're under we fallback to smaller model
     light_model VARCHAR(255),

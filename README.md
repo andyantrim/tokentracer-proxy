@@ -158,4 +158,4 @@ Per-user overrides can be set in the `users` table (`rate_limit_minute`, `rate_l
 
 ## License
 
-[MIT](LICENSE)
+[Do what the fuck you want](LICENSE), cause I know I have.

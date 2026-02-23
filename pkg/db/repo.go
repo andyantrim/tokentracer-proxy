@@ -8,16 +8,15 @@ import (
 
 // ModelAlias represents a routing rule in the database
 type ModelAlias struct {
-	ID                    int
-	UserID                int
-	Alias                 string
-	TargetModel           string
-	ProviderKeyID         int
-	FallbackProviderKeyID *int
-	FallbackAliasID       *int
-	UseLightModel         bool
-	LightModelThreshold   int
-	LightModel            *string
+	ID                  int
+	UserID              int
+	Alias               string
+	TargetModel         string
+	ProviderKeyID       int
+	FallbackAliasID     *int
+	UseLightModel       bool
+	LightModelThreshold int
+	LightModel          *string
 }
 
 // ProviderKey represents a downstream provider's key
@@ -61,7 +60,7 @@ type Repository interface {
 	CreateAPIKey(ctx context.Context, userID int, name, keyHash, prefix string) error
 
 	// Model Aliases
-	UpsertModelAlias(ctx context.Context, userID int, alias, targetModel string, providerKeyID int, fallbackProviderKeyID, fallbackAliasID *int, useLightModel bool, lightModelThreshold int, lightModel *string) error
+	UpsertModelAlias(ctx context.Context, userID int, alias, targetModel string, providerKeyID int, fallbackAliasID *int, useLightModel bool, lightModelThreshold int, lightModel *string) error
 	GetModelAlias(ctx context.Context, userID int, alias string) (*ModelAlias, error)
 	GetModelAliasByID(ctx context.Context, id int) (string, error)
 	ListModelAliases(ctx context.Context, userID int) ([]ModelAlias, error)
@@ -116,18 +115,17 @@ func (r *PostgresRepository) CreateAPIKey(ctx context.Context, userID int, name,
 	return err
 }
 
-func (r *PostgresRepository) UpsertModelAlias(ctx context.Context, userID int, alias, targetModel string, providerKeyID int, fallbackProviderKeyID, fallbackAliasID *int, useLightModel bool, lightModelThreshold int, lightModel *string) error {
-	sql := `INSERT INTO model_aliases (user_id, alias, target_model, provider_key_id, fallback_provider_key_id, fallback_alias_id, use_light_model, light_model_threshold, light_model)
-	        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-			ON CONFLICT (user_id, alias) 
-			DO UPDATE SET target_model = EXCLUDED.target_model, 
+func (r *PostgresRepository) UpsertModelAlias(ctx context.Context, userID int, alias, targetModel string, providerKeyID int, fallbackAliasID *int, useLightModel bool, lightModelThreshold int, lightModel *string) error {
+	sql := `INSERT INTO model_aliases (user_id, alias, target_model, provider_key_id, fallback_alias_id, use_light_model, light_model_threshold, light_model)
+	        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			ON CONFLICT (user_id, alias)
+			DO UPDATE SET target_model = EXCLUDED.target_model,
 			              provider_key_id = EXCLUDED.provider_key_id,
-						  fallback_provider_key_id = EXCLUDED.fallback_provider_key_id,
 						  fallback_alias_id = EXCLUDED.fallback_alias_id,
 						  use_light_model = EXCLUDED.use_light_model,
 						  light_model_threshold = EXCLUDED.light_model_threshold,
 						  light_model = EXCLUDED.light_model`
-	_, err := r.pool.Exec(ctx, sql, userID, alias, targetModel, providerKeyID, fallbackProviderKeyID, fallbackAliasID, useLightModel, lightModelThreshold, lightModel)
+	_, err := r.pool.Exec(ctx, sql, userID, alias, targetModel, providerKeyID, fallbackAliasID, useLightModel, lightModelThreshold, lightModel)
 	return err
 }
 
@@ -151,7 +149,7 @@ func (r *PostgresRepository) GetModelAliasByID(ctx context.Context, id int) (str
 }
 
 func (r *PostgresRepository) ListModelAliases(ctx context.Context, userID int) ([]ModelAlias, error) {
-	rows, err := r.pool.Query(ctx, "SELECT id, alias, target_model, provider_key_id, fallback_provider_key_id, fallback_alias_id, use_light_model, light_model_threshold, light_model FROM model_aliases WHERE user_id = $1", userID)
+	rows, err := r.pool.Query(ctx, "SELECT id, alias, target_model, provider_key_id, fallback_alias_id, use_light_model, light_model_threshold, light_model FROM model_aliases WHERE user_id = $1", userID)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +158,7 @@ func (r *PostgresRepository) ListModelAliases(ctx context.Context, userID int) (
 	var aliases []ModelAlias
 	for rows.Next() {
 		var a ModelAlias
-		err := rows.Scan(&a.ID, &a.Alias, &a.TargetModel, &a.ProviderKeyID, &a.FallbackProviderKeyID, &a.FallbackAliasID, &a.UseLightModel, &a.LightModelThreshold, &a.LightModel)
+		err := rows.Scan(&a.ID, &a.Alias, &a.TargetModel, &a.ProviderKeyID, &a.FallbackAliasID, &a.UseLightModel, &a.LightModelThreshold, &a.LightModel)
 		if err != nil {
 			return nil, err
 		}
@@ -172,13 +170,12 @@ func (r *PostgresRepository) ListModelAliases(ctx context.Context, userID int) (
 
 // allowedPatchColumns is the whitelist of columns that can be updated via PATCH.
 var allowedPatchColumns = map[string]bool{
-	"target_model":            true,
-	"provider_key_id":         true,
-	"fallback_provider_key_id": true,
-	"fallback_alias_id":       true,
-	"use_light_model":         true,
-	"light_model_threshold":   true,
-	"light_model":             true,
+	"target_model":          true,
+	"provider_key_id":       true,
+	"fallback_alias_id":     true,
+	"use_light_model":       true,
+	"light_model_threshold": true,
+	"light_model":           true,
 }
 
 func (r *PostgresRepository) PatchModelAlias(ctx context.Context, userID int, alias string, updates map[string]interface{}) error {

@@ -568,7 +568,12 @@
                         const method = this.editingAlias ? 'PATCH' : 'POST';
                         const url = this.editingAlias ? `/manage/aliases/${this.aliasForm.alias}` : '/manage/aliases';
 
-                        await this.apiCall(url, method, this.aliasForm);
+                        // Normalize optional fields: send null instead of empty/zero
+                        const payload = { ...this.aliasForm };
+                        if (!payload.fallback_alias_id) payload.fallback_alias_id = null;
+                        if (!payload.light_model) payload.light_model = null;
+
+                        await this.apiCall(url, method, payload);
                         this.showAliasForm = false;
                         this.editingAlias = false;
                         this.aliasForm = { alias: '', target_model: '', provider_key_id: '', fallback_alias_id: '', use_light_model: false, light_model_threshold: 100, light_model: '' };
