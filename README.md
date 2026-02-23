@@ -3,6 +3,7 @@
 > **Note:** This project is untested and currently in development. Use at your own risk.
 
 A unified proxy for LLM APIs that provides token tracking, cost optimization, and intelligent routing across OpenAI, Anthropic, and Google Gemini.
+<img width="1916" height="994" alt="alias_setup" src="https://github.com/user-attachments/assets/a67aeae6-0cae-4dcd-8bad-0e5023c2fff9" />
 
 ## Features
 
