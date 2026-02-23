@@ -30,7 +30,7 @@ func InitDB() error {
 	}
 
 	if !strings.HasSuffix(dbURL, "/tokentracer") {
-		dbURL = dbURL + "/tokentracer"
+		dbURL += "/tokentracer"
 	}
 
 	var err error

@@ -121,11 +121,13 @@ func (s *ProxyServer) ProxyHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Success!
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(openAIResp)
+		if err := json.NewEncoder(w).Encode(openAIResp); err != nil {
+			log.Printf("proxy handler: encode response error: %v", err)
+		}
 
 		// Async Logging
 		go func(uid int, provType, model, aliasUsed string, in, out int) {
-			s.Repo.InsertRequestLog(context.Background(), db.RequestLog{
+			if err := s.Repo.InsertRequestLog(context.Background(), db.RequestLog{
 				UserID:       uid,
 				AliasUsed:    aliasUsed,
 				ProviderUsed: provType,
@@ -133,7 +135,9 @@ func (s *ProxyServer) ProxyHandler(w http.ResponseWriter, r *http.Request) {
 				InputTokens:  in,
 				OutputTokens: out,
 				StatusCode:   http.StatusOK,
-			})
+			}); err != nil {
+				log.Printf("proxy handler: insert request log error: %v", err)
+			}
 		}(userID, providerType, reqCopy.Model, currentModel, openAIResp.Usage.PromptTokens, openAIResp.Usage.CompletionTokens)
 
 		return

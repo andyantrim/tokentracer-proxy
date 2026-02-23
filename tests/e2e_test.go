@@ -57,7 +57,7 @@ func TestProxyEndToEnd(t *testing.T) {
 			},
 			StopReason: "end_turn",
 		}
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer mockAnthropic.Close()
 
@@ -132,7 +132,12 @@ func TestProxyEndToEnd(t *testing.T) {
 	}
 	reqBody, _ := json.Marshal(openAIReq)
 
-	res, err := http.Post(ts.URL+"/v1/chat/completions", "application/json", bytes.NewBuffer(reqBody))
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, ts.URL+"/v1/chat/completions", bytes.NewBuffer(reqBody))
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to call proxy: %v", err)
 	}

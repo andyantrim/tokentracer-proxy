@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
+	"time"
 	"tokentracer-proxy/pkg/auth"
 	"tokentracer-proxy/pkg/crypto"
 	"tokentracer-proxy/pkg/db"
@@ -71,7 +73,9 @@ func main() {
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		// TODO: add ping to db?
-		w.Write([]byte("OK"))
+		if _, err := w.Write([]byte("OK")); err != nil {
+			log.Printf("health check: write response error: %v", err)
+		}
 	})
 
 	port := os.Getenv("PORT")
@@ -80,8 +84,13 @@ func main() {
 	}
 
 	fmt.Printf("Starting server on :%s\n", port)
-	if err := http.ListenAndServe(":"+port, r); err != nil {
-		fmt.Printf("Server failed to start: %v\n", err)
-		os.Exit(1)
+	srv := &http.Server{
+		Addr:         ":" + port,
+		Handler:      r,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 60 * time.Second,
+	}
+	if err := srv.ListenAndServe(); err != nil {
+		log.Printf("Server failed to start: %v", err)
 	}
 }

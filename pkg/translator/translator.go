@@ -35,10 +35,7 @@ func OpenAIToAnthropicRequest(req types.OpenAIRequest) (types.AnthropicRequest, 
 		if msg.Role == "system" {
 			systemPrompt += msg.Content + "\n"
 		} else {
-			messages = append(messages, types.AnthropicMessage{
-				Role:    msg.Role,
-				Content: msg.Content,
-			})
+			messages = append(messages, types.AnthropicMessage(msg))
 		}
 	}
 

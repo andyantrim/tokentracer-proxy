@@ -108,7 +108,9 @@ func ListAliases(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(aliases)
+	if err := json.NewEncoder(w).Encode(aliases); err != nil {
+		log.Printf("list aliases: encode response error: %v", err)
+	}
 }
 
 // ListProviderModels returns cached models for a given provider key
@@ -117,7 +119,10 @@ func ListProviderModels(w http.ResponseWriter, r *http.Request) {
 	keyID := chi.URLParam(r, "keyID")
 
 	keyIDInt := 0
-	fmt.Sscanf(keyID, "%d", &keyIDInt)
+	if _, err := fmt.Sscanf(keyID, "%d", &keyIDInt); err != nil {
+		http.Error(w, "Invalid key ID", http.StatusBadRequest)
+		return
+	}
 
 	providerName, _, err := db.Repo.GetProviderKey(context.Background(), keyIDInt, userID)
 	if err != nil {
@@ -133,7 +138,9 @@ func ListProviderModels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(models)
+	if err := json.NewEncoder(w).Encode(models); err != nil {
+		log.Printf("list provider models: encode response error: %v", err)
+	}
 }
 
 // ListAllModels returns all cached models for all providers
@@ -145,5 +152,7 @@ func ListAllModels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(models)
+	if err := json.NewEncoder(w).Encode(models); err != nil {
+		log.Printf("list all models: encode response error: %v", err)
+	}
 }

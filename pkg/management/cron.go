@@ -59,7 +59,9 @@ func pollModels(ctx context.Context) {
 			models, err := prov.ListModels(ctx)
 			if err == nil {
 				for _, m := range models {
-					db.Repo.InsertProviderModel(ctx, k.Provider, m)
+					if err := db.Repo.InsertProviderModel(ctx, k.Provider, m); err != nil {
+						fmt.Printf("Failed to insert model %s for provider %s: %v\n", m, k.Provider, err)
+					}
 				}
 			} else {
 				fmt.Printf("Failed to list models for provider %s: %v\n", k.Provider, err)
@@ -80,6 +82,8 @@ func seedCommonModels(ctx context.Context, providerType string) {
 		commonModels = []string{"gemini-3-pro", "gemini-3-flash", "gemini-2.5-pro", "gemini-2.5-flash"}
 	}
 	for _, m := range commonModels {
-		db.Repo.InsertProviderModel(ctx, providerType, m)
+		if err := db.Repo.InsertProviderModel(ctx, providerType, m); err != nil {
+			fmt.Printf("Failed to seed model %s for provider %s: %v\n", m, providerType, err)
+		}
 	}
 }

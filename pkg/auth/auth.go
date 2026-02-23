@@ -59,7 +59,9 @@ func SignupHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"message": "User created"})
+	if err := json.NewEncoder(w).Encode(map[string]string{"message": "User created"}); err != nil {
+		log.Printf("signup: encode response error: %v", err)
+	}
 }
 
 // LoginHandler authenticates a user and returns a session JWT
@@ -92,7 +94,9 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(AuthResponse{Token: token})
+	if err := json.NewEncoder(w).Encode(AuthResponse{Token: token}); err != nil {
+		log.Printf("login: encode response error: %v", err)
+	}
 }
 
 // GenerateAPIKeyHandler creates a long-lived JWT for API usage
@@ -130,7 +134,9 @@ func GenerateAPIKeyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(AuthResponse{Token: token})
+	if err := json.NewEncoder(w).Encode(AuthResponse{Token: token}); err != nil {
+		log.Printf("generate api key: encode response error: %v", err)
+	}
 }
 
 // UserInfoHandler returns details about the authenticated user
@@ -143,7 +149,9 @@ func UserInfoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"email": email})
+	if err := json.NewEncoder(w).Encode(map[string]string{"email": email}); err != nil {
+		log.Printf("user info: encode response error: %v", err)
+	}
 }
 
 func generateJWT(userID int, scope string, duration time.Duration) (string, error) {

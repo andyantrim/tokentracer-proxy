@@ -31,7 +31,9 @@ func GetUsageStats(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(stats)
+	if err := json.NewEncoder(w).Encode(stats); err != nil {
+		log.Printf("dashboard stats: encode response error: %v", err)
+	}
 }
 
 func RegisterRoutes(r chi.Router) {

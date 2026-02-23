@@ -60,5 +60,7 @@ func ListProviderKeys(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(keys)
+	if err := json.NewEncoder(w).Encode(keys); err != nil {
+		log.Printf("list provider keys: encode response error: %v", err)
+	}
 }
